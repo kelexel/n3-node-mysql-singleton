@@ -23,13 +23,13 @@ const conf = {
   connectionLimit: 100 // you can add any other node mysql settings here.
 }
 
-const db = require('n3-sql').getInstance(config);
+const db = require('n3-node-mysql-singleton').getInstance(config);
 ```
 
 Than simply require db whenever, and wherever you need it:
 ```
 // mySuperAppModule.js
-const db = require('n3-sql').getInstance();
+const db = require('n3-node-mysql-singleton').getInstance();
 db.query(...);
 ```
 
@@ -40,7 +40,7 @@ db.query(...);
 I added a fourth boolean argument to db.query: `keepAlive`.
 If set to true, the pool connection won't get released, so you can re-use the previous pool connection in your next query.
 ```
-const db = require('n3-sql').getInstance();
+const db = require('n3-node-mysql-singleton').getInstance();
 db.query(sql, values, (error, results, fields) => {
   if (err) { /* ... */ }
   db.query(sql2, values2, (error2, results2, fields2) => {
@@ -74,7 +74,7 @@ const cid = process.env.NODE_ID !== undefined ? process.env.NODE_ID : 0;
 dbconfig.logOkPrefix = 'OK CID '+cid+' | ';
 dbconfig.logErrorPrefix = 'Error CID '+cid+' | ';
 
-const db = require('n3-sql').getInstance(dbconfig);
+const db = require('n3-node-mysql-singleton').getInstance(dbconfig);
 
 const app = require('./app.js');
 ...
