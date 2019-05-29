@@ -1,32 +1,39 @@
-// n3-sql
-// A simple singleton wrapper to node mysql
+/*
+ n3-node-mysql-singleton
 
-// author: Rudolph Sand (kelexel)
-// licence: MIT
+ A simple singleton wrapper to node mysql
 
-// For more information about node mysql and pooling (extra settings, events), please read the docs at:
-// https://github.com/mysqljs/mysql#pooling-connections
+ author: Rudolph Sand (kelexel)
+ licence: MIT
 
-const debug = require('debug')('n3-nms')
+ For more information about node mysql and pooling (extra settings, events), please read the docs at: https://github.com/mysqljs/mysql#pooling-connections
+*/
+
+(function () {
+  'use strict';
+}());
+
+const debug = require('debug')('n3-nms');
 const mysql = require('mysql');
 
 let _instance;
-let _connection;
+let _connection = false;
 
 class NMS {
 
   constructor(config) {
     // this.config = config;
-    this.config = {}
+    this.config = {};
+
     this.pool = false;
-    this.config.logOkPrefix = config.logOkPrefix || '';
+
+    this.config.logOkPrefix =
+    config.logOkPrefix || '';
+
     this.config.logErrorPrefix = config.logOkPrefix || '';
 
-    _instance = {};
-    _connection = false;
-
     if (config.pool === true)
-    this._createPool(config)
+    this._createPool(config);
     else
     this._createConnection(config);
   }
@@ -39,8 +46,11 @@ class NMS {
       const logOkPrefix = this.config.logOkPrefix;
 
       this.pool.getConnection((err, poolConnection) => {
-        if (err) console.log('error', err)
-        debug('%sNew poolConnection#4 %d', this.config.logOkPrefix, poolConnection.threadId);
+        if (err) {
+          console.log('error', err);
+          return;
+        }
+        debug('%sNew poolConnection %d', this.config.logOkPrefix, poolConnection.threadId);
         _connection = poolConnection;
         if (callback) callback(poolConnection);
       });
@@ -51,16 +61,12 @@ class NMS {
     if (this.pool !== false) {
       return _connection !== false ? _connection.escape(str) : false;
     }
-
     if (!callback) {
-      console.log('no callback ?!')
+      debug('%No escape callback providden, cannot return escaped value! %d', this.config.logErrorPrefix, _connection.threadId);
       return;
     }
 
-    const logOkPrefix = this.config.logOkPrefix;
-
     this.acquire((poolConnection) => {
-      debug('%sNew poolConnection#5 %d', logOkPrefix, poolConnection.threadId);
       callback(_connection.escape(str));
     });
   }
@@ -116,11 +122,11 @@ class NMS {
     const connection = mysql.createConnection(config);
     connection.connect((err) => {
       if (err) {
-        debug('%sCannot connect to DB!', logErrorPrefix)
+        debug('%sCannot connect to DB!', logErrorPrefix);
         console.error('error connecting: ' + err.stack);
         return;
       }
-      debug('%sConnected to DB as %d!', logOkPrefix, connection.threadId)
+      debug('%sConnected to DB as %d!', logOkPrefix, connection.threadId);
     });
     _instance = connection;
   }

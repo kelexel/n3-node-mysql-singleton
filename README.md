@@ -103,6 +103,7 @@ db.escape(str, (escapedStr) => {
 * As always, use at your own risk.
 
 ## Changelog:
+* 1.0.7: Cleaner Class, added .jshintrc
 * 1.0.6: Rewritten as a Class, but not fully tested - yet.
 
 ## Todo
