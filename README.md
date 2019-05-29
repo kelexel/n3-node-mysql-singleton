@@ -1,13 +1,14 @@
 # n3-sql
 A simple singleton wrapper to node mysql
 
-Purpose:
+## Purpose:
 
 * Make a database connection reusable across all my code basically, by wrapping a mysql connection, or pool, in a singleton.
 * Give the possibility to use database pooling, and if so, acquire and release a connection as fast as possible from the pool (FIFO style).
-* Otherwise fallback to regular node mysql
+* Give the ability to re-use the same pool connection without re-querying the pool, or, allow one-use-only connections.
+* Otherwise fallback to regular node mysql.
 
-Usage:
+## Usage:
 
 First, call getInstance() using the database config:
 ```
@@ -32,9 +33,44 @@ const db = require('n3-sql').getInstance();
 db.query(...);
 ```
 
-Note & disclaimer:
-* This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR), or to consider it as a simple exercise.
-* My workflow implies identifying nodes that generate logs using what I refer to as a CID, thus the "OK CID XXX" strings in the code. I'm thinking about adding onLogOk, onLogError, onLogWarning events to let you customize this.
+
+## Extra Flavors
+#### keepAlive
+I added a fourth boolean argument to db.query: `keepAlive`.
+If set to true, the pool connection won't get released, so you can re-use the previous pool connection in your next query.
+```
+const db = require('n3-sql').getInstance();
+db.query(sql, values, (error, results, fields) => {
+  if (err) { /* ... */ }
+  db.query(sql2, values2, (error2, results2, fields2) => {
+    ...
+    }, true);
+}, true);
+```
+
+#### Events
+You can pass references for the following pool events: `onPoolAquire`, `onPoolRelease`, `onPoolConnection` in your config definition.
+
+#### Logging
+You can pass `logOkPrefix` and `logErrorPrefix` strings in your config definition, therefore you could do something like:
+```
+const prefix = process.env.NODE_ENV ? process.env.NODE_ENV+'-' : '';
+const dbconfig = require('etc/'+prefix+'db-conf.js');
+
+const cid = process.env.NODE_ID !== undefined ? process.env.NODE_ID : 0;
+dbconfig.logOkPrefix = 'OK CID '+cid+' | ';
+dbconfig.logErrorPrefix = 'Error CID '+cid+' | ';
+
+const db = require('n3-sql').getInstance(dbconfig);
+
+const app = require('./app.js');
+...
+
+```
+
+
+## Notes & disclaimers:
+* This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR).
 * The wrapper only wraps around pool.query, the rest is just cosmetics around node mysql.
 * I decided to use `debug` as my CLI logging engine, therefore, you can pass DEBUG=n3-sql as environment variable to get verbose output of pool activities.
 * I wish someone could write a few sample tests for this wrapper.

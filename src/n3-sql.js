@@ -14,33 +14,47 @@ let connection = false;
 let pool = false;
 
 const initianlizeDB = (config) => {
-  const cid = process.env.NODE_ID !== undefined ? process.env.NODE_ID : 0;
-  debug('OK CID '+cid+' | Connecting to DB')
+
+  const logOkPrefix = config.logOkPrefix || '';
+  const logErrorPrefix = config.logOkPrefix || '';
+
+  debug('%sConnecting to DB', logOkPrefix)
   try {
     if (config.pool === true) {
       pool = mysql.createPool(config);
       connection = {};
-      connection.query = (sql, values, cb) => {
-        pool.getConnection((err, poolConnection) => {
-          console.log('getConnection')
-          poolConnection.query(sql, values, cb);
-          poolConnection.release();
-        });
+      connection.query = (sql, values, cb, keepAlive) => {
+        if (connection.previousConnection) {
+          debug('%sUsing previous poolConnection %d',logOkPrefix, connection.previousConnection.threadId);
+          connection.previousConnection.query(sql, values, cb);
+          if (keepAlive !== true) {
+            connection.previousConnection.release();
+            delete connection.previousConnection;
+          }
+        } else {
+          pool.getConnection((err, poolConnection) => {
+            debug('%sNew poolConnection %d', logOkPrefix, poolConnection.threadId);
+            poolConnection.query(sql, values, cb);
+            if (keepAlive !== true) {
+              poolConnection.release();
+              if (connection.previousConnection) delete connection.previousConnection;
+            } else
+              connection.previousConnection = poolConnection;
+          });
+        }
       };
 
-      pool.on('acquire', (connection) => {
-        debug('OK CID '+cid+' | Pool connection aquired');
-        // console.log('Connection %d acquired', connection.threadId);
-      });
+      if (config.onPoolAquire)
+      pool.on('acquire', config.onPoolAquire);
 
-      pool.on('connection', (connection) => {
-        debug('OK CID '+cid+' | Pool connection init');
-        // console.log('Connection %d acquired', connection.threadId);
-      });
+      if (config.onPoolConnection)
+      pool.on('connection', config.onPoolConnection);
 
+      if (config.onPoolRelease)
+      pool.on('connection', config.onPoolRelease);
+      else
       pool.on('release', (connection) => {
-        debug('OK CID '+cid+' | Pool connection released');
-        // console.log('Connection %d acquired', connection.threadId);
+        debug('%sReleasing pool connection %d', logOkPrefix, connection.threadId);
       });
 
 
@@ -48,11 +62,11 @@ const initianlizeDB = (config) => {
       connection = mysql.createConnection(config);
       connection.connect((err) => {
         if (err) {
-          debug('ERROR CID '+cid+' | Cannot connect to DB!')
+          debug('%sCannot connect to DB!', logErrorPrefix)
           console.error('error connecting: ' + err.stack);
           return;
         }
-        debug('OK CID '+cid+' | Connected to DB!')
+        debug('%sConnected to DB!', logOkPrefix)
         // console.log('connected as id ' + connection.threadId);
       });
     }
