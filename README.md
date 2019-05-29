@@ -4,9 +4,8 @@ A simple singleton wrapper to node mysql
 ## Purpose:
 
 * Make a database connection reusable across all my code basically, by wrapping a mysql connection, or pool, in a singleton.
-* Give the possibility to use database pooling, and if so, acquire and release a connection as fast as possible from the pool (FIFO style).
-* Give the ability to re-use the same pool connection without re-querying the pool, or, allow one-use-only connections.
-* Otherwise fallback to regular node mysql.
+* Give the possibility to use database pooling, and the ability to re-use the same pool connection without re-querying the pool, or, allow one-use-only connections (FIFO style).
+* Act as a (very humble) drop-in replacement to node mysql.
 
 ## Usage:
 
@@ -103,6 +102,9 @@ db.escape(str, (escapedStr) => {
 * I wish someone could write a few sample tests for this wrapper.
 * As always, use at your own risk.
 
+## Changelog:
+* 1.0.6: Rewritten as a Class, but not fully tested - yet.
+
 ## Todo
 * Write tests
-* Make it optionally return Promises
+* Make it optionally return Promises, or... not?
