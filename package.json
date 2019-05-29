@@ -1,6 +1,6 @@
 {
   "name": "n3-sql",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/kelexel/n3-sql",
   "description": "A simple singleton wrapper to node mysql",
   "keywords": [
@@ -27,7 +27,7 @@
     "url": "https://github.com/kelexel/n3-sql/issues"
   },
   "scripts": {
-    "release": "scripts/release"
+    "test": "echo \"Hrm, no tests yet :(\" && exit 1"
   },
   "main": "src/n3-sql.js",
   "engine": {
