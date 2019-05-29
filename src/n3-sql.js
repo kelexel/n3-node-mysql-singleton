@@ -23,6 +23,40 @@ const initianlizeDB = (config) => {
     if (config.pool === true) {
       pool = mysql.createPool(config);
       connection = {};
+
+      connection.acquire = (callback) => {
+        if (connection.previousConnection) {
+          if (callback)
+            return callback(connection.previousConnection);
+        } else
+        pool.getConnection((err, poolConnection) => {
+          debug('%sNew poolConnection %d', logOkPrefix, poolConnection.threadId);
+          connection.previousConnection = poolConnection;
+          if (callback) callback(poolConnection);
+        });
+      }
+
+      connection.escape = (str, callback) => {
+        if (connection.previousConnection)
+          return connection.previousConnection.escape(str);
+        else {
+          if (!callback) {
+            console.log('no callback ?!')
+            return;
+          }
+          pool.getConnection((err, poolConnection) => {
+            debug('%sNew poolConnection %d', logOkPrefix, poolConnection.threadId);
+            connection.previousConnection = poolConnection;
+            callback(poolConnection.escape(str));
+          });
+        }
+      }
+
+      connection.release = () => {
+        if (connection.previousConnection)
+          return connection.previousConnection.release();
+      }
+
       connection.query = (sql, values, cb, keepAlive) => {
         if (connection.previousConnection) {
           debug('%sUsing previous poolConnection %d',logOkPrefix, connection.previousConnection.threadId);

@@ -35,7 +35,8 @@ db.query(...);
 
 
 ## Extra Flavors
-#### keepAlive
+
+#### Keeping pool connections alive
 I added a fourth boolean argument to db.query: `keepAlive`.
 If set to true, the pool connection won't get released, so you can re-use the previous pool connection in your next query.
 ```
@@ -46,6 +47,18 @@ db.query(sql, values, (error, results, fields) => {
     ...
     }, true);
 }, true);
+```
+#### Acquiring and Releasing pool connections
+If using pool connections, you can force acquiring or releasing a connection at any time by using:
+```
+let myCon;
+db.acquire((connection) => {
+  myCon = connection;
+});
+...
+myCon.release();
+or
+db.release();
 ```
 
 #### Events
@@ -68,6 +81,20 @@ const app = require('./app.js');
 
 ```
 
+### Escaping
+If using pool connections, and `keepAlive`, escaping will re-use the existing pool connection.
+```
+const str = 'hello world';
+const escapedStr = db.escape(str);
+console.log(escapedStr);
+```
+If no connection exists, *you must* supply a callback to *pool.escape* (because acquiring a new pool connection is asynchronous)
+```
+const str = 'hello world';
+db.escape(str, (escapedStr) => {
+  console.log(escapedStr);
+});
+```
 
 ## Notes & disclaimers:
 * This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR).
@@ -75,3 +102,7 @@ const app = require('./app.js');
 * I decided to use `debug` as my CLI logging engine, therefore, you can pass DEBUG=n3-sql as environment variable to get verbose output of pool activities.
 * I wish someone could write a few sample tests for this wrapper.
 * As always, use at your own risk.
+
+## Todo
+* Write tests
+* Make it optionally return Promises
