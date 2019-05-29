@@ -11,6 +11,7 @@ Usage:
 
 First, call getInstance() using the database config:
 ```
+// app.js
 const conf = {
   host     : '1.2.3.4',
   port      : '3306',
@@ -24,14 +25,15 @@ const conf = {
 const db = require('n3-sql').getInstance(config);
 ```
 
+Than simply require db whenever, and wherever you need it:
 ```
-// Than simply require db whenever, and wherever you need it:
+// mySuperAppModule.js
 const db = require('n3-sql').getInstance();
 db.query(...);
 ```
 
 Note & disclaimer:
-* This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it, or to consider it as a simple exercise.
+* This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR), or to consider it as a simple exercise.
 * My workflow implies identifying nodes that generate logs using what I refer to as a CID, thus the "OK CID XXX" strings in the code. I'm thinking about adding onLogOk, onLogError, onLogWarning events to let you customize this.
 * The wrapper only wraps around pool.query, the rest is just cosmetics around node mysql.
 * I decided to use `debug` as my CLI logging engine, therefore, you can pass DEBUG=n3-sql as environment variable to get verbose output of pool activities.
