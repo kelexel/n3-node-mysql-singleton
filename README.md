@@ -15,12 +15,12 @@ const conf = {
   connectionLimit: 100 // you can add any other node mysql settings here.
 }
 
-const db = require(base_dir+'/helpers/db').getInstance(config);
+const db = require('n3-sql').getInstance(config);
 ```
 
 ```
 // Than simply require db whenever, and wherever you need it:
-const db = require(base_dir+'/helpers/db').getInstance();
+const db = require('n3-sql').getInstance();
 db.query(...);
 ```
 
