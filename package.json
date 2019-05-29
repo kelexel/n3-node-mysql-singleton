@@ -1,11 +1,13 @@
 {
-  "name": "n3-sql",
-  "version": "1.0.3",
-  "homepage": "https://github.com/kelexel/n3-sql",
+  "name": "n3-node-mysql-singleton",
+  "version": "1.0.4",
+  "homepage": "https://github.com/kelexel/n3-node-mysql-singleton",
   "description": "A simple singleton wrapper to node mysql",
   "keywords": [
     "node",
     "mysql",
+    "singleton",
+    "promise",
     "wrapper"
   ],
   "author": "Rudolph Sand <rudolph.sand@gmail.com>",
@@ -19,16 +21,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:kelexel/n3-sql.git"
+    "url": "git@github.com:kelexel/n3-node-mysql-singleton.git"
   },
   "bugs": {
     "mail": "rudolph.sand@gmail.com",
-    "url": "https://github.com/kelexel/n3-sql/issues"
+    "url": "https://github.com/kelexel/n3-node-mysql-singleton/issues"
   },
   "scripts": {
     "test": "echo \"Hrm, no tests yet :(\" && exit 1"
   },
-  "main": "src/n3-sql.js",
+  "main": "src/n3-nms.js",
   "engine": {
     "node": ">=4"
   },

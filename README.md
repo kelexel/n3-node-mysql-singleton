@@ -1,4 +1,4 @@
-# n3-sql
+# n3-node-mysql-singleton
 A simple singleton wrapper to node mysql
 
 ## Purpose:
