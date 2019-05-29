@@ -13,7 +13,7 @@ const mysql = require('mysql');
 let connection = false;
 let pool = false;
 
-const initianlizeDB = () => {
+const initianlizeDB = (config) => {
   const cid = process.env.NODE_ID !== undefined ? process.env.NODE_ID : 0;
   debug('OK CID '+cid+' | Connecting to DB')
   try {

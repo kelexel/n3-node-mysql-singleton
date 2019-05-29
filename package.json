@@ -6,7 +6,7 @@
   "keywords": [
     "node",
     "mysql",
-    "wrapper",
+    "wrapper"
   ],
   "author": "Rudolph Sand <rudolph.sand@gmail.com>",
   "contributors": [
@@ -16,7 +16,6 @@
     "mysql": "^2.17.1"
   },
   "devDependencies": {
-    "github-publish-release": "^5.0.0",
   },
   "repository": {
     "type": "git",
