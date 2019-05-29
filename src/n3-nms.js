@@ -7,7 +7,7 @@
 // For more information about node mysql and pooling (extra settings, events), please read the docs at:
 // https://github.com/mysqljs/mysql#pooling-connections
 
-const debug = require('debug')('n3-sql')
+const debug = require('debug')('n3-nms')
 const mysql = require('mysql');
 
 let connection = false;

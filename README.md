@@ -99,7 +99,7 @@ db.escape(str, (escapedStr) => {
 ## Notes & disclaimers:
 * This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR).
 * The wrapper only wraps around pool.query, the rest is just cosmetics around node mysql.
-* I decided to use `debug` as my CLI logging engine, therefore, you can pass DEBUG=n3-sql as environment variable to get verbose output of pool activities.
+* I decided to use `debug` as my CLI logging engine, therefore, you can pass `DEBUG=n3-nms` as environment variable to get verbose output of pool activities.
 * I wish someone could write a few sample tests for this wrapper.
 * As always, use at your own risk.
 
