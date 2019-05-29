@@ -13,24 +13,47 @@
   'use strict';
 }());
 
-const debug = require('debug')('n3-nms');
 const mysql = require('mysql');
 
 let _instance;
 let _connection = false;
 
-class NMS {
+// class Logger {
+//   constructor() {
+//   this._logOkPrefix = '';
+//   this._logErrorPrefix = '';
+//   this._loggingFacility = false;
+//   }
+//   log(status, message) {
+//     if (!this._loggingFacility) console.log(status, message);
+//     else {
+//       if (status == 'ok')
+//         this._loggingFacility(this._logOkPrefix+' | '+message)
+//       else
+//         this._loggingFacility(this._logErrorPrefix+' | '+message)
+//     }
+//   }
+//   setFacility(config) {
+//     this._logOkPrefix = config.logOkPrefix || 'Ok';
+//     this._logErrorPrefix = config.logErrorPrefix || 'Error';
+//     this._loggingFacility = config.loggingFacility;
+//     this.log('ok', 'Log Facility set!');
+//     return this;
+//   }
+// }
+const _logger = require('n3-node-logger')();
+
+class NodeMysqlSingleton {
 
   constructor(config) {
     // this.config = config;
     this.config = {};
 
+    if (config.loggingFacility) {
+      _logger.setFacility(config);
+    }
+
     this.pool = false;
-
-    this.config.logOkPrefix =
-    config.logOkPrefix || '';
-
-    this.config.logErrorPrefix = config.logOkPrefix || '';
 
     if (config.pool === true)
     this._createPool(config);
@@ -43,14 +66,13 @@ class NMS {
       if (callback)
       return callback(_connection);
     } else {
-      const logOkPrefix = this.config.logOkPrefix;
 
       this.pool.getConnection((err, poolConnection) => {
         if (err) {
           console.log('error', err);
           return;
         }
-        debug('%sNew poolConnection %d', this.config.logOkPrefix, poolConnection.threadId);
+        _logger.log('ok', 'New poolConnection '+ poolConnection.threadId);
         _connection = poolConnection;
         if (callback) callback(poolConnection);
       });
@@ -62,7 +84,7 @@ class NMS {
       return _connection !== false ? _connection.escape(str) : false;
     }
     if (!callback) {
-      debug('%No escape callback providden, cannot return escaped value! %d', this.config.logErrorPrefix, _connection.threadId);
+      _logger.log('error', 'No escape callback providden, cannot return escaped value!' + _connection.threadId);
       return;
     }
 
@@ -82,7 +104,7 @@ class NMS {
     }
 
     if (_connection !== false) {
-      debug('%sUsing previous poolConnection %d',this.config.logOkPrefix, _connection.threadId);
+      _logger.log('ok', 'Using previous poolConnection ' + _connection.threadId);
       _connection.query(sql, values, cb);
       if (keepAlive !== true) {
         _connection.release();
@@ -113,7 +135,7 @@ class NMS {
     else {
       const logOkPrefix = this.config.logOkPrefix;
       this.pool.on('release', (connection) => {
-        debug('%sReleasing pool connection %d', logOkPrefix, connection.threadId);
+        _logger.log('ok', 'Releasing pool connection ' + connection.threadId);
       });
     }
   }
@@ -122,11 +144,11 @@ class NMS {
     const connection = mysql.createConnection(config);
     connection.connect((err) => {
       if (err) {
-        debug('%sCannot connect to DB!', logErrorPrefix);
+        _logger.log('error', 'Cannot connect to DB!');
         console.error('error connecting: ' + err.stack);
         return;
       }
-      debug('%sConnected to DB as %d!', logOkPrefix, connection.threadId);
+      _logger.log('Connected to DB as %d!' + connection.threadId);
     });
     _instance = connection;
   }
@@ -136,7 +158,7 @@ module.exports = {
   getInstance: (config) => {
     if (_instance) return _instance;
     else {
-      _instance = new NMS(config);
+      _instance = new NodeMysqlSingleton(config);
       return _instance;
     }
   }
