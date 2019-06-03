@@ -15,6 +15,9 @@
 
 const mysql = require('mysql');
 
+// Only for testing purposes, leave false otherwise
+const forceKeepAlive = false;
+
 // Used to store our object instance
 let _instance;
 // Used to store our last connection obtained from the pool
@@ -97,25 +100,24 @@ class NodeMysqlSingleton {
     // Otherwise, we are in pool mode, so check if a _connection exists, and if so, perform the query using it.
     if (_connection !== false) {
       _logger.log('ok', 'Using previous poolConnection ' + _connection.threadId);
-      _connection.query(sql, values, cb);
-      // If keepAlive is not providden, release the connection
-      // WARNING:
-      // WARNING:
-      // WARNING:
-      //this might need to be chained to _connection.query, but "time will tell"...
-      if (keepAlive !== true) {
-        _connection.release();
-        _connection = false;
-      }
-    } else {
-      // Or if no _connection exists, create one, than execute the query
-      this.acquire(() => {
-        _connection.query(sql, values, cb);
-        // And release it if keepAlive is not providden
-        if (keepAlive !== true) {
+      _connection.query(sql, values, (error, results, fields) => {
+        if (keepAlive !== true && forceKeepAlive !== true) {
           _connection.release();
           _connection = false;
         }
+        cb(error, results, fields);
+      });
+    } else {
+      // Or if no _connection exists, create one, than execute the query
+      this.acquire(() => {
+        _connection.query(sql, values, (error, results, fields) => {
+          if (keepAlive !== true && forceKeepAlive !== true) {
+            _connection.release();
+            _connection = false;
+          }
+          cb(error, results, fields);
+        });
+        // And release it if keepAlive is not providden
       });
     }
   }
@@ -135,12 +137,22 @@ class NodeMysqlSingleton {
     this.pool = mysql.createPool(config);
 
     // Set acquire pool event
-    if (config.onPoolAquire)
-    this.pool.on('acquire', config.onPoolAquire);
+    if (config.onPoolAcquire)
+    this.pool.on('acquire', config.onPoolAcquire);
 
     // Set connection pool event
     if (config.onPoolConnection)
     this.pool.on('connection', config.onPoolConnection);
+
+    // Set release pool event
+    if (config.onPoolEnqueue)
+    this.pool.on('connection', config.onPoolEnqueue);
+    else {
+      // Set a default release event, usefull for testing keepAlive...
+      this.pool.on('enqueue', () => {
+        _logger.log('error', 'Pool enqued!');
+      });
+    }
 
     // Set release pool event
     if (config.onPoolRelease)
@@ -151,6 +163,9 @@ class NodeMysqlSingleton {
         _logger.log('ok', 'Releasing pool connection ' + connection.threadId);
       });
     }
+
+    _logger.log('ok', 'Pool DB created!');
+
   }
 
   _createConnection(config) {

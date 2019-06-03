@@ -8,6 +8,7 @@ A simple singleton wrapper to node mysql
 * Act as a (very humble) drop-in replacement to node mysql.
 
 ## Changelog:
+* 1.1.2: Releasing a pool connection is now done in the query callback
 * 1.1.1: Fixed npm publishing issue...
 * 1.1.0: Added some documentation to the code
 * 1.0.9: Removed logger dependency, the ligrary now supports `log` boolean and `onLog`callback
