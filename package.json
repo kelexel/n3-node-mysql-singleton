@@ -1,6 +1,6 @@
 {
   "name": "n3-node-mysql-singleton",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "homepage": "https://github.com/kelexel/n3-node-mysql-singleton",
   "description": "A simple singleton wrapper to node mysql",
   "keywords": [

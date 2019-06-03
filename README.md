@@ -7,6 +7,13 @@ A simple singleton wrapper to node mysql
 * Give the possibility to use database pooling, and the ability to re-use the same pool connection without re-querying the pool, or, allow one-use-only connections (FIFO style).
 * Act as a (very humble) drop-in replacement to node mysql.
 
+## Changelog:
+* 1.1.0: Added some documentation to the code
+* 1.0.9: Removed logger dependency, the ligrary now supports `log` boolean and `onLog`callback
+* 1.0.8: Added my own logger
+* 1.0.7: Cleaner Class, added .jshintrc
+* 1.0.6: Rewritten as a Class, but not fully tested - yet.
+
 ## Usage:
 
 First, call getInstance() using the database config:
@@ -33,7 +40,42 @@ db.query(...);
 ```
 
 
-## Extra Flavors
+
+#### Pool methods:
+```
+// Acquire a pool connection
+db.acquire((connection) => {
+  ...
+});
+
+// Release a pool connection
+db.release();
+
+// Escape a value
+db.escape('hello', (escapedValue) => {
+  ...
+})
+
+// Make a query with a single use connection
+db.query(sql, values, (error, results, fields) => {
+  ...
+});
+// Make a query and storing the existing connection
+db.query(sql, values, (error, results, fields) => {
+  ...
+}, true);
+```
+
+#### Single connection methods:
+```
+// Escape a value
+const escapedVal = db.escape('hello');
+
+// Make a query
+db.query(sql, values, (error, results, fields) => {
+  ...
+});
+```
 
 #### Keeping pool connections alive
 I added a fourth boolean argument to db.query: `keepAlive`.
@@ -47,29 +89,19 @@ db.query(sql, values, (error, results, fields) => {
     }, true);
 }, true);
 ```
-#### Acquiring and Releasing pool connections
-If using pool connections, you can force acquiring or releasing a connection at any time by using:
-```
-let myCon;
-db.acquire((connection) => {
-  myCon = connection;
-});
-...
-myCon.release();
-or
-db.release();
-```
 
 #### Events
-You can pass references for the following pool events: `onPoolAquire`, `onPoolRelease`, `onPoolConnection` in your config definition.
+You can pass method references for the following pool events: `onPoolAquire`, `onPoolRelease`, `onPoolConnection` in your config definition.
+You can also pass references for `onLog` event (see *Logging*)
 
 #### Logging
-This library can now use *any* logging facility you want, or fall back to `console`
+This library can now use *any* logging facility, or fall back to `console` as default
 
 ```
 // app.js
 const dbconfig = require('etc/'+prefix+'db-conf.js');
 
+// turn logging on
 dbconfig.log = true
 const db = require('n3-node-mysql-singleton').getInstance(dbconfig);
 ```
@@ -78,18 +110,21 @@ Optionally pass a callback, otherwise, the library will use simply console.log(s
 ```
 const dbconfig = require('etc/'+prefix+'db-conf.js');
 
+// set a custom logger
 const debugDb = require('debug')('db')
 
+// set a custom onLog event
 dbconfig.onLog = (status, message) => {
   // Here you can use any logging facility you want, ie debug:
   if (status == 'ok') debug('ok: '+message);
   else ...
 }
+
 // than create your db instance
 const db = require('n3-node-mysql-singleton').getInstance(dbconfig);
 ```
 
-### Escaping
+#### Escaping
 If using pool connections, and `keepAlive`, escaping will re-use the existing pool connection.
 ```
 const str = 'hello world';
@@ -106,15 +141,9 @@ db.escape(str, (escapedStr) => {
 
 ## Notes & disclaimers:
 * This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR).
-* The wrapper only wraps around pool.query, the rest is just cosmetics around node mysql.
+* The wrapper only wraps around \*.query, and \*.escape the rest is just cosmetics around node mysql.
 * I wish someone could write a few sample tests for this wrapper.
 * As always, use at your own risk.
-
-## Changelog:
-* 1.0.9: Removed logger dependency, the ligrary now supports `log` boolean and `onLog`callback
-* 1.0.8: Added my own logger
-* 1.0.7: Cleaner Class, added .jshintrc
-* 1.0.6: Rewritten as a Class, but not fully tested - yet.
 
 ## Todo
 * Write tests
