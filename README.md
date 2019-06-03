@@ -64,24 +64,29 @@ db.release();
 You can pass references for the following pool events: `onPoolAquire`, `onPoolRelease`, `onPoolConnection` in your config definition.
 
 #### Logging
-You can pass `logOkPrefix` and `logErrorPrefix` strings in your config definition, to prefix log messages based on their status.
-Use `loggingFacility` to pass your logger.
-It will be called as a function by the logger.
-For more infos on logging capabilities, check https://github.com/kelexel/n3-node-logger
+This library can now use *any* logging facility you want, or fall back to `console`
+
 ```
 // app.js
-const prefix = process.env.NODE_ENV ? process.env.NODE_ENV+'-' : '';
 const dbconfig = require('etc/'+prefix+'db-conf.js');
 
-const cid = process.env.NODE_ID !== undefined ? process.env.NODE_ID : 0;
-
-dbconfig.logOkPrefix = 'OK CID '+cid;
-dbconfig.logErrorPrefix = 'Error CID '+cid;
-dbconfig.loggingFacility = require('debug')('foo');
-
+dbconfig.log = true
 const db = require('n3-node-mysql-singleton').getInstance(dbconfig);
-...
+```
 
+Optionally pass a callback, otherwise, the library will use simply console.log(status, message)...
+```
+const dbconfig = require('etc/'+prefix+'db-conf.js');
+
+const debugDb = require('debug')('db')
+
+dbconfig.onLog = (status, message) => {
+  // Here you can use any logging facility you want, ie debug:
+  if (status == 'ok') debug('ok: '+message);
+  else ...
+}
+// than create your db instance
+const db = require('n3-node-mysql-singleton').getInstance(dbconfig);
 ```
 
 ### Escaping
@@ -102,11 +107,11 @@ db.escape(str, (escapedStr) => {
 ## Notes & disclaimers:
 * This was designed to fit specific needs (mine). You will probably need to modify it, so feel free to fork and improve it (but please, make a PR).
 * The wrapper only wraps around pool.query, the rest is just cosmetics around node mysql.
-* I decided to use <del>`debug` as my CLI logging engine, therefore, you can pass `DEBUG=n3-nms` as environment variable to get verbose output of pool activities</del> to use a simple logging facility wrapper, so you can use any logging method you chose.
 * I wish someone could write a few sample tests for this wrapper.
 * As always, use at your own risk.
 
 ## Changelog:
+* 1.0.9: Removed logger dependency, the ligrary now supports `log` boolean and `onLog`callback
 * 1.0.8: Added my own logger
 * 1.0.7: Cleaner Class, added .jshintrc
 * 1.0.6: Rewritten as a Class, but not fully tested - yet.
