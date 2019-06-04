@@ -10,12 +10,6 @@ core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
 
-debug@^4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-4.1.1.tgz#3b72260255109c6b589cee050f1d516139664791"
-  dependencies:
-    ms "^2.1.1"
-
 inherits@~2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.3.tgz#633c2c83e3da42a502f52466022480f4208261de"
@@ -23,10 +17,6 @@ inherits@~2.0.3:
 isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
-
-ms@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.1.tgz#30a5864eb3ebb0a66f2ebe6d727af06a09d86e0a"
 
 mysql@^2.17.1:
   version "2.17.1"
@@ -36,6 +26,12 @@ mysql@^2.17.1:
     readable-stream "2.3.6"
     safe-buffer "5.1.2"
     sqlstring "2.3.1"
+
+n3-node-mysql-singleton@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/n3-node-mysql-singleton/-/n3-node-mysql-singleton-1.1.2.tgz#bae6b2c740fc9f96643d24f427eec0e68af7f622"
+  dependencies:
+    mysql "^2.17.1"
 
 process-nextick-args@~2.0.0:
   version "2.0.0"
