@@ -176,7 +176,8 @@ class NodeMysqlSingleton {
     }
     // Set release pool event
     if (config.onPoolRelease)
-    this.pool.on('connection', config.onPoolRelease);
+    this.pool.on('release', config.onPoolRelease);
+
 
     _logger.log('ok', 'Pool DB created!');
 
