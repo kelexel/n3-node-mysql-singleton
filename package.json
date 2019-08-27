@@ -1,6 +1,6 @@
 {
   "name": "n3-node-mysql-singleton",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homepage": "https://github.com/kelexel/n3-node-mysql-singleton",
   "description": "A simple singleton wrapper to node mysql",
   "keywords": [
@@ -11,11 +11,13 @@
     "wrapper"
   ],
   "author": "Rudolph Sand <rudolph.sand@gmail.com>",
-  "contributors": [],
+  "contributors": [
+  ],
   "dependencies": {
     "mysql": "^2.17.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:kelexel/n3-node-mysql-singleton.git"

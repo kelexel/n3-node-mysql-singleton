@@ -73,7 +73,7 @@ class NodeMysqlSingleton {
           console.log('error', err);
           return;
         }
-        this._connection = poolConection;
+        this._connection = poolConnection;
         if (callback) callback(poolConnection);
       }.bind(this));
     // }
