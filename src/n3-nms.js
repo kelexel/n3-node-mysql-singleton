@@ -18,16 +18,32 @@ const mysql = require('mysql');
 // Only for testing purposes, leave false otherwise
 const forceKeepAlive = true;
 
-// Used to store our object instance
-let _instance;
+// Used to store our object instances
+let _instances = {};
 // // Used to store our last connection obtained from the pool
 // let _connection = false;
 // Used as a logging shim
 let _logger = {};
 
+const createRegularConnection = (config, label) => {
+  // Create a regular db connection
+  const connection = mysql.createConnection(config);
+  connection.connect((err) => {
+    if (err) {
+      _logger.log('error', 'Cannot connect to DB!');
+      console.error('error connecting: ' + err.stack);
+      return;
+    }
+    _logger.log('Connected to DB as %d!' + connection.threadId);
+  });
+  // Store the connection to the database as _instance
+  return connection;
+};
+
 class NodeMysqlSingleton {
 
-  constructor(config) {
+  constructor(config, label) {
+    label = label !== undefined ? label : 'default';
     // Store logging settings
     this._config = {
       log: config.log,
@@ -42,9 +58,9 @@ class NodeMysqlSingleton {
 
     // Decide if we want to create a pool, or a single database connection
     if (config.pool === true)
-    this._createPool(config);
+    this._createPool(config, label);
     else
-    this._createConnection(config);
+    this._createConnection(config, label);
   }
 
   acquire(callback) {
@@ -99,16 +115,6 @@ class NodeMysqlSingleton {
     if (this.pool === false) {
       return _connection !== false ? _connection.query(sql, values, cb) : false;
     }
-      // this.pool.query(sql, values, (error, results, fields) => {
-      //   // if (keepAlive !== true && forceKeepAlive !== true) {
-      //   //   _connection.release();
-      //   //   console.log(_connection)
-      //   //   // _connection = false;
-      //   // }
-      //   cb(error, results, fields);
-      // });
-
-
       this.acquire((connection) => {
         connection.query(sql, values, (error, results, fields) => {
           if (keepAlive !== true && forceKeepAlive !== true) {
@@ -117,30 +123,6 @@ class NodeMysqlSingleton {
           cb(error, results, fields);
         });
       });
-    // // Otherwise, we are in pool mode, so check if a _connection exists, and if so, perform the query using it.
-    // if (_connection !== false) {
-    //   _logger.log('ok', 'Using previous poolConnection ' + _connection.threadId);
-    //   _connection.query(sql, values, (error, results, fields) => {
-    //     if (keepAlive !== true && forceKeepAlive !== true) {
-    //       _connection.release();
-    //       console.log(_connection)
-    //       // _connection = false;
-    //     }
-    //     cb(error, results, fields);
-    //   });
-    // } else {
-    //   // Or if no _connection exists, create one, than execute the query
-    //   this.acquire(() => {
-    //     _connection.query(sql, values, (error, results, fields) => {
-    //       if (keepAlive !== true && forceKeepAlive !== true) {
-    //         // _connection.release();
-    //         // _connection = false;
-    //       }
-    //       cb(error, results, fields);
-    //     });
-    //     // And release it if keepAlive is not providden
-    //   });
-    // }
   }
 
   _log(status, message) {
@@ -153,7 +135,7 @@ class NodeMysqlSingleton {
     console.log(status, message);
   }
 
-  _createPool(config) {
+  _createPool(config, label) {
     // Create a database pool
     this.pool = mysql.createPool(config);
 
@@ -179,33 +161,26 @@ class NodeMysqlSingleton {
     this.pool.on('release', config.onPoolRelease);
 
 
-    _logger.log('ok', 'Pool DB created!');
+    _logger.log('ok', 'Pool '+label+' DB created!');
 
   }
 
-  _createConnection(config) {
-    // Create a regular db connection
-    const connection = mysql.createConnection(config);
-    connection.connect((err) => {
-      if (err) {
-        _logger.log('error', 'Cannot connect to DB!');
-        console.error('error connecting: ' + err.stack);
-        return;
-      }
-      _logger.log('Connected to DB as %d!' + connection.threadId);
-    });
-    // Store the connection to the database as _instance
-    _instance = connection;
-  }
 }
 
 module.exports = {
   // Classic singleton stuff
-  getInstance: (config) => {
-    if (_instance) return _instance;
-    else {
-      _instance = new NodeMysqlSingleton(config);
-      return _instance;
+  getInstance: (config, label) => {
+    label = label !== undefined ? label : 'default';
+    if (_instances && _instances[label]) {
+      // console.log('found', label)
+      return _instances[label];
+    } else {
+      if (config && config.pool)
+        _instances[label] = new NodeMysqlSingleton(config, label);
+      else {
+        _instances[label] = createRegularConnection(config, label);
+      }
+      return _instances[label];
     }
   }
 };
