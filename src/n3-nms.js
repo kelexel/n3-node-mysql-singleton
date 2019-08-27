@@ -6,6 +6,8 @@
  author: Rudolph Sand (kelexel)
  licence: MIT
 
+ version: 1.2.0
+
  For more information about node mysql and pooling (extra settings, events), please read the docs at: https://github.com/mysqljs/mysql#pooling-connections
 */
 
@@ -18,16 +20,31 @@ const mysql = require('mysql');
 // Only for testing purposes, leave false otherwise
 const forceKeepAlive = false;
 
-// Used to store our object instance
-let _instance;
-// Used to store our last connection obtained from the pool
-let _connection = false;
+// Used to store our object instances
+let _instances = {};
+
 // Used as a logging shim
 let _logger = {};
 
+// Create a regular db connection
+const createRegularConnection = (config, label) => {
+  const connection = mysql.createConnection(config);
+  connection.connect((err) => {
+    if (err) {
+      _logger.log('error', 'Cannot connect to DB!');
+      console.error('error connecting: ' + err.stack);
+      return;
+    }
+    _logger.log('Connected to DB as %d!' + connection.threadId);
+  });
+  // Store the connection to the database as _instance
+  return connection;
+};
+
 class NodeMysqlSingleton {
 
-  constructor(config) {
+  constructor(config, label) {
+    label = label !== undefined ? label : 'default';
     // Store logging settings
     this._config = {
       log: config.log,
@@ -40,86 +57,94 @@ class NodeMysqlSingleton {
     // Reset the pool placeholder
     this.pool = false;
 
-    // Decide if we want to create a pool, or a single database connection
+    this.label = label;
+    // Create the db pool
     if (config.pool === true)
-    this._createPool(config);
+    this._createPool(config, label);
     else
-    this._createConnection(config);
+    console.log('this should not happen')
   }
 
   acquire(callback) {
-    // If we are in pool mode, and already have acquired a connection, return it.
-    if (_connection !== false && this.pool !== false) {
-      if (callback)
-      return callback(_connection);
-    } else {
       // Aquire a connection from the pool
-      this.pool.getConnection((err, poolConnection) => {
+      if (this._connection) return callback(this._connection);
+      this.pool.getConnection(function(err, poolConnection){
         if (err) {
           console.log('error', err);
           return;
         }
-        _logger.log('ok', 'New poolConnection '+ poolConnection.threadId);
-        // Memoize the connection as _connection for later reuse
-        _connection = poolConnection;
-        // And return it if a callback was supplied as argument
+        this._connection = poolConection;
         if (callback) callback(poolConnection);
-      });
-    }
+      }.bind(this));
+    // }
   }
 
-  escape(str, callback) {
-    // If we are in pool mode
-    if (this.pool !== false) {
-      // And a connection exists, use it to escape the value, otherwise, return false.
-      return _connection !== false ? _connection.escape(str) : false;
-    }
-    // If no callback is supplied, warn the user...
-    if (!callback) {
-      _logger.log('error', 'No escape callback providden, cannot return escaped value!' + _connection.threadId);
-      return;
-    }
-    // Acquire a connection, and use it to return the escaped value via the callback
-    this.acquire((poolConnection) => {
-      callback(_connection.escape(str));
-    });
-  }
+  // This was removed as it seems out of the scope of this library.
+  // You can simply aquire a poolConection and use poolConnection.escape() instead..
+
+  // escape(str, callback) {
+  //   // If we are in pool mode
+  //   if (this.pool !== false) {
+  //     // And a connection exists, use it to escape the value, otherwise, return false.
+  //     return _connection !== false ? _connection.escape(str) : false;
+  //   }
+  //   // If no callback is supplied, warn the user...
+  //   if (!callback) {
+  //     _logger.log('error', 'No escape callback providden, cannot return escaped value!');
+  //     return;
+  //   }
+  //   // Acquire a connection, and use it to return the escaped value via the callback
+  //   this.acquire((poolConnection) => {
+  //     callback(poolConnection.escape(str));
+  //   });
+  // }
 
   release() {
     // If we are in pool mode and a connection exists, release it.
-    if (this.pool !== false && _connection !== false)
-    return _connection.release();
+    // if (this.pool !== false && _connection !== false)
+    // return _connection.release();
+    if (this._connection) {
+      console.log('closing', this._connection.threadId)
+      this._connection.release();
+      this._connection = false;
+      delete this._connection;
+    }
+  }
+  destroy() {
+    console.log('db.destroy is deprecated ?')
+    // If we are in pool mode and a connection exists, release it.
+    // if (this.pool !== false && _connection !== false)
+    // return _connection.release();
+    // if (this._connection) {
+    //   console.log('destroying', this._connection.threadId)
+    //   this._connection.destroy();
+    //   // delete this._connection;
+    // }
+    // const label = this.label;
+    // this.acquire(function(poolConnection) {
+    //   // console.log(poolConnection)
+    //   // console.log('released',label)
+    //   poolConnection.release();
+    //   // delete this._connection;
+    // }.bind(this));
   }
 
   query(sql, values, cb, keepAlive) {
-    // If we are NOT in pool mode, use the existing (single) connection to perform the query
-    if (this.pool === false) {
-      return _connection !== false ? _connection.query(sql, values, cb) : false;
-    }
-
-    // Otherwise, we are in pool mode, so check if a _connection exists, and if so, perform the query using it.
-    if (_connection !== false) {
-      _logger.log('ok', 'Using previous poolConnection ' + _connection.threadId);
-      _connection.query(sql, values, (error, results, fields) => {
-        if (keepAlive !== true && forceKeepAlive !== true) {
-          _connection.release();
-          _connection = false;
-        }
-        cb(error, results, fields);
-      });
-    } else {
-      // Or if no _connection exists, create one, than execute the query
-      this.acquire(() => {
-        _connection.query(sql, values, (error, results, fields) => {
+      this.acquire(function(connection) {
+        connection.query(sql, values, function(error, results, fields) {
+          // console.log({sql, keepAlive, forceKeepAlive})
           if (keepAlive !== true && forceKeepAlive !== true) {
-            _connection.release();
-            _connection = false;
+            // console.log('release', this.label)
+            connection.release();
+            this._connection = false;
+          } else {
+            console.log('Warning, keepAlive is true', this.label, sql)
+
+            _logger.log('Warning, keepAlive is true!', sql);
           }
           cb(error, results, fields);
-        });
-        // And release it if keepAlive is not providden
-      });
-    }
+        }.bind(this));
+      }.bind(this));
   }
 
   _log(status, message) {
@@ -132,7 +157,7 @@ class NodeMysqlSingleton {
     console.log(status, message);
   }
 
-  _createPool(config) {
+  _createPool(config, label) {
     // Create a database pool
     this.pool = mysql.createPool(config);
 
@@ -150,47 +175,34 @@ class NodeMysqlSingleton {
     else {
       // Set a default release event, usefull for testing keepAlive...
       this.pool.on('enqueue', () => {
-        _logger.log('error', 'Pool enqued!');
+        // _logger.log('warning', 'Pool enqued!');
       });
     }
-
     // Set release pool event
     if (config.onPoolRelease)
-    this.pool.on('connection', config.onPoolRelease);
-    else {
-      // Set a default release event, usefull for testing keepAlive...
-      this.pool.on('release', (connection) => {
-        _logger.log('ok', 'Releasing pool connection ' + connection.threadId);
-      });
-    }
+    this.pool.on('release', config.onPoolRelease);
 
-    _logger.log('ok', 'Pool DB created!');
+
+    _logger.log('ok', 'Pool '+label+' DB created!');
 
   }
 
-  _createConnection(config) {
-    // Create a regular db connection
-    const connection = mysql.createConnection(config);
-    connection.connect((err) => {
-      if (err) {
-        _logger.log('error', 'Cannot connect to DB!');
-        console.error('error connecting: ' + err.stack);
-        return;
-      }
-      _logger.log('Connected to DB as %d!' + connection.threadId);
-    });
-    // Store the connection to the database as _instance
-    _instance = connection;
-  }
 }
 
 module.exports = {
   // Classic singleton stuff
-  getInstance: (config) => {
-    if (_instance) return _instance;
-    else {
-      _instance = new NodeMysqlSingleton(config);
-      return _instance;
+  getInstance: (config, label) => {
+    label = label !== undefined ? label : 'default';
+    if (_instances && _instances[label]) {
+      // console.log('found', label)
+      return _instances[label];
+    } else {
+      if (config && config.pool)
+        _instances[label] = new NodeMysqlSingleton(config, label);
+      else {
+        _instances[label] = createRegularConnection(config, label);
+      }
+      return _instances[label];
     }
   }
 };

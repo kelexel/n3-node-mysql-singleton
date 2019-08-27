@@ -3,11 +3,12 @@ A simple singleton wrapper to node mysql
 
 ## Purpose:
 
-* Make a database connection reusable across all my code basically, by wrapping a mysql connection, or pool, in a singleton.
+* Make a database connection reusable across all your code by wrapping a mysql connection (or pool connection), in a re-usable singleton.
+* Have the ability to connect to different databases, each db instance being it's own singleton.
 * Give the possibility to use database pooling, and the ability to re-use the same pool connection without re-querying the pool, or, allow one-use-only connections (FIFO style).
-* Act as a (very humble) drop-in replacement to node mysql.
 
 ## Changelog:
+* 1.2.0: New multi db support, simplified code...
 * 1.1.2: Releasing a pool connection is now done in the query callback
 * 1.1.1: Fixed npm publishing issue...
 * 1.1.0: Added some documentation to the code
@@ -21,7 +22,7 @@ A simple singleton wrapper to node mysql
 First, call getInstance() using the database config:
 ```
 // app.js
-const conf = {
+const config = {
   host     : '1.2.3.4',
   port      : '3306',
   user     : 'myUser',
@@ -30,41 +31,46 @@ const conf = {
   pool: true, // true if you want to use pools
   connectionLimit: 100 // you can add any other node mysql settings here.
 }
+const label = 'default';
 
-const db = require('n3-node-mysql-singleton').getInstance(config);
+const db = require('n3-node-mysql-singleton').getInstance(config, label);
 ```
 
 Than simply require db whenever, and wherever you need it:
 ```
 // mySuperAppModule.js
-const db = require('n3-node-mysql-singleton').getInstance();
+const label = 'default';
+const db = require('n3-node-mysql-singleton').getInstance(label);
 db.query(...);
 ```
+
+Note, you can drop the `label` if your are only connecting to a unique database.
 
 
 
 #### Pool methods:
 ```
-// Acquire a pool connection
-db.acquire((connection) => {
+// Acquire a (new or existing) connection from the pool
+db.acquire((poolConnection) => {
+  // This means you can reuse the connection several times...
+  const foo = poolConnection.escape('bar');
+  // But do not forget to release it!
+  poolConnection.release();
   ...
 });
 
-// Release a pool connection
-db.release();
 
-// Escape a value
-db.escape('hello', (escapedValue) => {
-  ...
-})
-
-// Make a query with a single use connection
+// Make a query with a single use poolConnection
 db.query(sql, values, (error, results, fields) => {
   ...
 });
-// Make a query and storing the existing connection
+
+
+// When making a query, if using keepAlive, the pool connection will not be released, making it easy to chain several queries in a row, without acquiring/releasing a poolConnection each time.
 db.query(sql, values, (error, results, fields) => {
   ...
+  // Just do not forget to release poolConnections when done using db this time !!
+  db.release();
 }, true);
 ```
 
@@ -87,6 +93,8 @@ const db = require('n3-node-mysql-singleton').getInstance();
 db.query(sql, values, (error, results, fields) => {
   if (err) { /* ... */ }
   db.query(sql2, values2, (error2, results2, fields2) => {
+    ...
+    db.release();
     ...
     }, true);
 }, true);
