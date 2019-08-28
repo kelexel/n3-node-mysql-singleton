@@ -79,32 +79,29 @@ class NodeMysqlSingleton {
     // }
   }
 
-  // This was removed as it seems out of the scope of this library.
-  // You can simply aquire a poolConection and use poolConnection.escape() instead..
-
-  // escape(str, callback) {
-  //   // If we are in pool mode
-  //   if (this.pool !== false) {
-  //     // And a connection exists, use it to escape the value, otherwise, return false.
-  //     return _connection !== false ? _connection.escape(str) : false;
-  //   }
-  //   // If no callback is supplied, warn the user...
-  //   if (!callback) {
-  //     _logger.log('error', 'No escape callback providden, cannot return escaped value!');
-  //     return;
-  //   }
-  //   // Acquire a connection, and use it to return the escaped value via the callback
-  //   this.acquire((poolConnection) => {
-  //     callback(poolConnection.escape(str));
-  //   });
-  // }
+  escape(str, callback) {
+    // If we are in pool mode
+    if (this.pool !== false) {
+      // And a connection exists, use it to escape the value, otherwise, return false.
+      _logger.log('error', 'Not in pool mode');
+      return false;
+    }
+    // If no callback is supplied, warn the user...
+    if (!callback) {
+      _logger.log('error', 'No escape callback providden, cannot return escaped value!');
+      return false;
+    }
+    // Acquire a connection, and use it to return the escaped value via the callback
+    this.acquire((poolConnection) => {
+      callback(poolConnection.escape(str));
+    });
+  }
 
   release() {
     // If we are in pool mode and a connection exists, release it.
-    // if (this.pool !== false && _connection !== false)
-    // return _connection.release();
-    if (this._connection) {
-      console.log('closing', this._connection.threadId)
+    if (this.pool !== false && this._connection) {
+      // console.log('release', this._connection.threadId)
+      // _logger.log('Warning, releasing is true!', this._connection.threadId);
       this._connection.release();
       this._connection = false;
       delete this._connection;
@@ -134,12 +131,12 @@ class NodeMysqlSingleton {
         connection.query(sql, values, function(error, results, fields) {
           // console.log({sql, keepAlive, forceKeepAlive})
           if (keepAlive !== true && forceKeepAlive !== true) {
-            // console.log('release', this.label)
+            // console.log('release', this.label, sql)
+            _logger.log('Warning, releasing is true!', sql);
             connection.release();
             this._connection = false;
           } else {
-            console.log('Warning, keepAlive is true', this.label, sql)
-
+            // console.log('Warning, keepAlive is true', this.label, sql)
             _logger.log('Warning, keepAlive is true!', sql);
           }
           cb(error, results, fields);
@@ -186,7 +183,6 @@ class NodeMysqlSingleton {
     _logger.log('ok', 'Pool '+label+' DB created!');
 
   }
-
 }
 
 module.exports = {
