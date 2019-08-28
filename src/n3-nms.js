@@ -168,13 +168,8 @@ class NodeMysqlSingleton {
 
     // Set release pool event
     if (config.onPoolEnqueue)
-    this.pool.on('connection', config.onPoolEnqueue);
-    else {
-      // Set a default release event, usefull for testing keepAlive...
-      this.pool.on('enqueue', () => {
-        // _logger.log('warning', 'Pool enqued!');
-      });
-    }
+    this.pool.on('enqueue', config.onPoolEnqueue);
+
     // Set release pool event
     if (config.onPoolRelease)
     this.pool.on('release', config.onPoolRelease);
