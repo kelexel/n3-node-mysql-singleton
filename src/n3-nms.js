@@ -67,13 +67,13 @@ class NodeMysqlSingleton {
 
   acquire(callback) {
       // Aquire a connection from the pool
-      if (this._connection) return callback(this._connection);
+      // if (this._connection) return callback(this._connection);
       this.pool.getConnection(function(err, poolConnection){
         if (err) {
           console.log('error', err);
           return;
         }
-        this._connection = poolConnection;
+        // this._connection = poolConnection;
         if (callback) callback(poolConnection);
       }.bind(this));
     // }
@@ -98,6 +98,7 @@ class NodeMysqlSingleton {
   }
 
   release() {
+    console.log('release SHOULD NOT BE USED ANYMORE FOR NOW')
     // If we are in pool mode and a connection exists, release it.
     if (this.pool !== false && this._connection) {
       // console.log('release', this._connection.threadId)
@@ -134,7 +135,7 @@ class NodeMysqlSingleton {
             // console.log('release', this.label, sql)
             _logger.log('Warning, releasing is true!', sql);
             connection.release();
-            this._connection = false;
+            // this._connection = false;
           } else {
             // console.log('Warning, keepAlive is true', this.label, sql)
             _logger.log('Warning, keepAlive is true!', sql);
@@ -168,8 +169,13 @@ class NodeMysqlSingleton {
 
     // Set release pool event
     if (config.onPoolEnqueue)
-    this.pool.on('enqueue', config.onPoolEnqueue);
-
+    this.pool.on('connection', config.onPoolEnqueue);
+    else {
+      // Set a default release event, usefull for testing keepAlive...
+      this.pool.on('enqueue', () => {
+        // _logger.log('warning', 'Pool enqued!');
+      });
+    }
     // Set release pool event
     if (config.onPoolRelease)
     this.pool.on('release', config.onPoolRelease);
