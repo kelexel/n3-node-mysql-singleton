@@ -126,7 +126,19 @@ class NodeMysqlSingleton {
     //   // delete this._connection;
     // }.bind(this));
   }
+  isReleased(connection) {
+    return (this.pool && this.pool._freeConnections && this.pool._freeConnections.indexOf(connection) >= 0);
+  }
+  getStats() {
+    let str = '';
+    str += 'pen: '+this.pool._acquiringConnections.length +' | ';
+    str += 'free: '+this.pool._freeConnections.length+' | ';
+    str += 'queue: '+this.pool._connectionQueue.length+' | ';
+    str += 'all: '+this.pool._allConnections.length+' | ';
+    str += 'max: '+this.pool.config.connectionLimit;
+    return str;
 
+  }
   query(sql, values, cb, keepAlive) {
       this.acquire(function(connection) {
         connection.query(sql, values, function(error, results, fields) {

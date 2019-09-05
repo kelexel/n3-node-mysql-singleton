@@ -159,3 +159,7 @@ db.escape(str, (escapedStr) => {
 * Write tests
 * Correct my spelling
 * Make it optionally return Promises, or... not?
+
+## Great litterature
+* https://github.com/mysqljs/mysql
+* https://stackoverflow.com/questions/35195309/how-to-get-number-of-unused-used-connection-in-nodejs-mysql-connection-pool
